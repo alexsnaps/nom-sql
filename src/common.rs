@@ -880,11 +880,17 @@ named!(pub integer_literal<CompleteByteSlice, Literal>,
         sign: opt!(tag!("-")) >>
         val: digit >>
         ({
-            let mut intval = i64::from_str(str::from_utf8(*val).unwrap()).unwrap();
+            let mut intval = i128::from_str(str::from_utf8(*val).unwrap()).unwrap();
             if sign.is_some() {
                 intval *= -1;
             }
-            Literal::Integer(intval)
+            if intval > std::i64::MAX as i128 {
+                Literal::UnsignedInteger(intval as u64)
+            } else if intval < std::i64::MIN as i128 {
+                panic!("{:?} can't fit in a Literal::Integer", intval)
+            } else {
+                Literal::Integer(intval as i64)
+            }
         })
     )
 );
